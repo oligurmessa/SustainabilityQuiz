@@ -67,7 +67,7 @@ public class Question extends VBox {
         int tf = 2; // Default for True/False
 
         // Check if in true/false mode
-        // then sets tf to a number to check which Radio button is pressed
+        // then sets tf to a number to check which Radio button is the correct answer to have something to compare with the index
         // tf is just an indicator for each radio button 0 = the true button, 1 = false button
         if (mode) {
             if (this.tfAnswer) {
