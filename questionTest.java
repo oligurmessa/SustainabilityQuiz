@@ -6,7 +6,7 @@ public class questionTest extends Application {
 
 	public void start(Stage primaryStage)  {
 		//MCQ Test
-		//Constructor used: public Question (String topic, String question, boolean tfAnswer, String statement )
+		//Constructor used: public Question (String topic, String question, String[] possibleAnswer, int indexOfAnswer, String statement )
 		//MCQ START
 		String topic = "TEST";
 		String question = "When does class start?";
