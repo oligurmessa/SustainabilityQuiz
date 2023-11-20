@@ -1,113 +1,90 @@
+import javafx.application.Application;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
-public class Account {
-    // Instance variables to hold the state of an account
-    private double balance; // The current balance of the account
-    private String owner; // The name of the account owner
-    private long accountNumber; // A unique number identifying the account
+public class QuizApp extends Application {
 
-    // Static variables to keep track of class-wide information
-    private static int numAccounts = 0; // The total number of accounts created
-    private static int numDepositsToday = 0; // The total number of deposits made today across all accounts
-    private static double totalDepositedToday = 0; // The total amount of money deposited today across all accounts
-    private static int numWithdrawalsToday = 0; // The total number of withdrawals made today across all accounts
-    private static double totalWithdrawnToday = 0; // The total amount of money withdrawn today across all accounts
+    private List<Question> questions;
+    private Random random = new Random();
+    private Label questionLabel;
+    private VBox choicesBox;
+    private Button submitButton;
+    private Label resultLabel;
+    private Question currentQuestion;
 
-    // Constructor for initializing an account with a specific balance, owner, and account number
-    public Account(double initBal, String owner, long number) {
-        this.balance = initBal; // Set the initial balance
-        this.owner = owner; // Set the owner's name
-        this.accountNumber = number; // Set the account number
-        numAccounts++; // Increment the total number of accounts
+    @Override
+    public void start(Stage primaryStage) {
+        initializeQuestions();
+        currentQuestion = getRandomQuestion();
+
+        VBox root = new VBox(10);
+        root.setAlignment(Pos.CENTER);
+
+        questionLabel = new Label();
+        choicesBox = new VBox(5);
+        submitButton = new Button("Submit");
+        resultLabel = new Label("");
+
+        displayQuestion(currentQuestion);
+
+        submitButton.setOnAction(e -> checkAnswer());
+
+        root.getChildren().addAll(questionLabel, choicesBox, submitButton, resultLabel);
+        Scene scene = new Scene(root, 350, 250);
+
+        primaryStage.setTitle("Quiz App");
+        primaryStage.setScene(scene);
+        primaryStage.show();
     }
 
-    // Constructor for initializing an account with a specific balance and owner, generates a random account number
-    public Account(double initBal, String owner) {
-        this(initBal, owner, new Random().nextLong());
+    private void initializeQuestions() {
+        questions = new ArrayList<>();
+        // Add questions here
+        questions.add(new Question("What is the capital of France?", new String[]{"Paris", "London", "Berlin", "Madrid"}, "Paris"));
+        // Add more questions in a similar way
     }
 
-    // Constructor for initializing an account with an owner and zero balance
-    public Account(String owner) {
-        this(0, owner);
+    private Question getRandomQuestion() {
+        return questions.get(random.nextInt(questions.size()));
     }
 
-    // Method to deposit a certain amount into the account
-    public void deposit(double amount) {
-        balance += amount; // Add the deposit amount to the balance
-        numDepositsToday++; // Increment the count of deposits made today
-        totalDepositedToday += amount; // Add the amount to the total deposited today
+    private void displayQuestion(Question question) {
+        questionLabel.setText(question.getQuestionText());
+        choicesBox.getChildren().clear();
+        ToggleGroup choicesGroup = new ToggleGroup();
+
+        for (String choice : question.getChoices()) {
+            RadioButton choiceButton = new RadioButton(choice);
+            choiceButton.setToggleGroup(choicesGroup);
+            choicesBox.getChildren().add(choiceButton);
+        }
     }
 
-    // Method to withdraw a certain amount from the account
-    public void withdraw(double amount) {
-        balance -= amount; // Subtract the withdrawal amount from the balance
-        numWithdrawalsToday++; // Increment the count of withdrawals made today
-        totalWithdrawnToday += amount; // Add the amount to the total withdrawn today
-    }
-
-    // Overloaded withdraw method that includes a transaction fee
-    public void withdraw(double amount, double fee) {
-        withdraw(amount + fee); // Withdraw the amount plus the fee
-    }
-
-    // Getter method for the account balance
-    public double getBalance() {
-        return balance;
-    }
-
-    // Getter method for the account number
-    public long getAccountNumber() {
-        return accountNumber;
-    }
-
-    // Overridden toString method to provide a string representation of the account
-    public String toString() {
-        return "Account Number: " + accountNumber + " | Owner: " + owner + " | Balance: " + balance;
-    }
-
-    // Static method to get the total number of accounts
-    public static int getNumAccounts() {
-        return numAccounts;
-    }
-
-    // Method to close an account, marks it as CLOSED and resets the balance
-    public void close() {
-        owner += " - CLOSED"; // Mark the account owner as CLOSED
-        balance = 0; // Reset the balance to zero
-        numAccounts--; // Decrement the total number of accounts
-    }
-
-    // Static method to consolidate two accounts into one
-    public static Account consolidate(Account acct1, Account acct2) {
-        if (!acct1.owner.equals(acct2.owner) || acct1.accountNumber == acct2.accountNumber) {
-            System.out.println("Accounts cannot be consolidated."); // Print an error if accounts can't be consolidated
-            return null;
+    private void checkAnswer() {
+        RadioButton selectedRadioButton = (RadioButton) ((ToggleGroup) choicesBox.getChildren().get(0).getToggleGroup()).getSelectedToggle();
+        if (selectedRadioButton != null) {
+            String userAnswer = selectedRadioButton.getText();
+            if (userAnswer.equals(currentQuestion.getCorrectAnswer())) {
+                resultLabel.setText("Correct!");
+            } else {
+                resultLabel.setText("Incorrect. The correct answer is: " + currentQuestion.getCorrectAnswer());
+            }
+            currentQuestion = getRandomQuestion();
+            displayQuestion(currentQuestion);
         } else {
-            Account newAccount = new Account(acct1.balance + acct2.balance, acct1.owner); // Create a new account with combined balance and same owner
-            acct1.close(); // Close the first account
-            acct2.close(); // Close the second account
-            return newAccount; // Return the new consolidated account
+            resultLabel.setText("Please select an answer.");
         }
     }
 
-    // Instance method to transfer an amount from this account to another
-    public void transfer(Account acct, double amount) {
-        if (this.balance >= amount) { // Check if the balance is sufficient for the transfer
-            this.withdraw(amount); // Withdraw the amount from this account
-            acct.deposit(amount); // Deposit the amount into the target account
-        }
-    }
-
-    // Static method to transfer an amount from one account to another
-    public static void transfer(Account acct1, Account acct2, double amount) {
-        acct1.transfer(acct2, amount); // Use the instance method to perform the transfer
-    }
-
-    // Static method to get the daily statistics across all accounts
-    public static String getDailyStats() {
-        return "Total Deposits Today: " + numDepositsToday + 
-               " | Total Deposited: " + totalDepositedToday + 
-            //    " | Total Withdrawals Today: " + numWithdrawalsToday + 
-               " | Total Withdrawn: " + totalWithdrawnToday;
+    public static void main(String[] args) {
+        launch(args);
     }
 }
